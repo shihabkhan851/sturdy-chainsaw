@@ -19,14 +19,34 @@ const client = new Client({
     intents: [GatewayIntentBits.Guilds]
 });
 
-client.once(Events.ClientReady, () => {
+client.once(Events.ClientReady, async () => {
     console.log(`Logged in as ${client.user.tag}`);
+
+    // Register Slash Command when bot is ready
+    const commands = [
+        new SlashCommandBuilder()
+            .setName('buttons')
+            .setDescription('Show ban buttons')
+            .toJSON()
+    ];
+
+    const rest = new REST({ version: '10' }).setToken(TOKEN);
+
+    try {
+        await rest.put(
+            Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID),
+            { body: commands }
+        );
+        console.log('Slash command registered');
+    } catch (error) {
+        console.error(error);
+    }
 });
 
 client.on(Events.InteractionCreate, async interaction => {
 
-    // Slash Command
     if (interaction.isChatInputCommand()) {
+
         if (interaction.commandName === 'buttons') {
 
             const embed = new EmbedBuilder()
@@ -58,44 +78,17 @@ client.on(Events.InteractionCreate, async interaction => {
         }
     }
 
-    // Button Interaction
     if (interaction.isButton()) {
 
-        if (interaction.customId === 'reload') {
+        if (interaction.customId === 'reload')
             await interaction.reply({ content: "🔄 Reload requested.", ephemeral: true });
-        }
 
-        if (interaction.customId === 'history') {
+        if (interaction.customId === 'history')
             await interaction.reply({ content: "📃 Punishment history requested.", ephemeral: true });
-        }
 
-        if (interaction.customId === 'appeal') {
-            await interaction.reply({ content: "📨 Appeal link: https://your-appeal-link.com", ephemeral: true });
-        }
+        if (interaction.customId === 'appeal')
+            await interaction.reply({ content: "📨 Appeal link: https://your-link.com", ephemeral: true });
     }
 });
 
 client.login(TOKEN);
-
-// Register Slash Command
-const commands = [
-    new SlashCommandBuilder()
-        .setName('buttons')
-        .setDescription('Show ban buttons')
-        .toJSON()
-];
-
-const rest = new REST({ version: '10' }).setToken(TOKEN);
-
-(async () => {
-    try {
-        await rest.put(
-            Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID),
-            { body: commands }
-        );
-        console.log('Slash command registered');
-    } catch (error) {
-        console.error(error);
-    }
-})();
-
