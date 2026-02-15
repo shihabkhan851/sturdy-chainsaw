@@ -15,6 +15,11 @@ const TOKEN = process.env.TOKEN;
 const CLIENT_ID = process.env.CLIENT_ID;
 const GUILD_ID = process.env.GUILD_ID;
 
+// 🔧 CUSTOMIZE HERE
+const SERVER_NAME = "Storm BD";
+const SERVER_LOGO = "https://i.ibb.co.com/5htbZ7DX/0ceb70d2-b44e-4970-aa07-1d092574058e-1.png";
+const APPEAL_LINK = "https://discord.com/channels/1266060642679394386/1304102065198600282";
+
 const client = new Client({
     intents: [GatewayIntentBits.Guilds]
 });
@@ -22,11 +27,10 @@ const client = new Client({
 client.once(Events.ClientReady, async () => {
     console.log(`Logged in as ${client.user.tag}`);
 
-    // Register Slash Command when bot is ready
     const commands = [
         new SlashCommandBuilder()
             .setName('buttons')
-            .setDescription('Show ban buttons')
+            .setDescription('Show moderation panel')
             .toJSON()
     ];
 
@@ -45,30 +49,38 @@ client.once(Events.ClientReady, async () => {
 
 client.on(Events.InteractionCreate, async interaction => {
 
+    // Slash Command
     if (interaction.isChatInputCommand()) {
 
         if (interaction.commandName === 'buttons') {
 
             const embed = new EmbedBuilder()
-                .setTitle("Ban System")
-                .setDescription("Choose an option below:")
-                .setColor(0xff0000);
+                .setAuthor({ name: SERVER_NAME, iconURL: SERVER_LOGO })
+                .setTitle("Moderation Panel")
+                .setDescription("Use the buttons below.")
+                .setColor(0xff0000)
+                .setThumbnail(SERVER_LOGO)
+                .setFooter({ text: SERVER_NAME });
 
             const row = new ActionRowBuilder().addComponents(
+
+                // 🔵 Reload (Blue)
                 new ButtonBuilder()
                     .setCustomId('reload')
                     .setLabel('🔄 Reload')
                     .setStyle(ButtonStyle.Primary),
 
+                // 🔵 Punishment History (Blue)
                 new ButtonBuilder()
                     .setCustomId('history')
                     .setLabel('📃 Punishment History')
-                    .setStyle(ButtonStyle.Secondary),
+                    .setStyle(ButtonStyle.Primary),
 
+                // 🔗 Appeal (Link Button)
                 new ButtonBuilder()
-                    .setCustomId('appeal')
                     .setLabel('📨 Appeal')
-                    .setStyle(ButtonStyle.Success),
+                    .setStyle(ButtonStyle.Link)
+                    .setURL(APPEAL_LINK)
             );
 
             await interaction.reply({
@@ -78,17 +90,20 @@ client.on(Events.InteractionCreate, async interaction => {
         }
     }
 
+    // Button Click
     if (interaction.isButton()) {
 
-        if (interaction.customId === 'reload')
-            await interaction.reply({ content: "🔄 Reload requested.", ephemeral: true });
+        // Appeal button auto handled by Discord (no reply needed)
+        if (!interaction.customId) return;
 
-        if (interaction.customId === 'history')
-            await interaction.reply({ content: "📃 Punishment history requested.", ephemeral: true });
-
-        if (interaction.customId === 'appeal')
-            await interaction.reply({ content: "📨 Appeal link: https://your-link.com", ephemeral: true });
+        await interaction.reply({
+            content: "❌ Access Denied: Only administrators or moderators can use this.",
+            ephemeral: true
+        });
     }
 });
+
+client.login(TOKEN);
+
 
 client.login(TOKEN);
