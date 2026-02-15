@@ -1,4 +1,12 @@
-const { Client, GatewayIntentBits, Partials } = require('discord.js');
+const { 
+    Client, 
+    GatewayIntentBits, 
+    Partials,
+    ActionRowBuilder,
+    ButtonBuilder,
+    ButtonStyle,
+    Events
+} = require('discord.js');
 
 const client = new Client({
     intents: [
@@ -9,85 +17,47 @@ const client = new Client({
     partials: [Partials.Channel]
 });
 
-client.once('ready', () => {
+client.once(Events.ClientReady, () => {
     console.log(`Logged in as ${client.user.tag}`);
 });
 
-client.on("messageCreate", async (message) => {
+client.on(Events.MessageCreate, async (message) => {
 
-    if (!message.author.bot) return;
+    if (message.author.bot) return;
     if (!message.embeds.length) return;
 
-    const embed = message.embeds[0];
-    if (!embed.title) return;
+    console.log("Embed detected!");
 
-    const title = embed.title.toLowerCase();
+    const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+            .setCustomId('reload')
+            .setLabel('🔄 Reload')
+            .setStyle(ButtonStyle.Primary),
 
-    const allowed = [
-        "ban",
-        "tempban",
-        "ipban",
-        "mute",
-        "tempmute",
-        "warn",
-        "jail"
-    ];
+        new ButtonBuilder()
+            .setCustomId('history')
+            .setLabel('📃 Punishment History')
+            .setStyle(ButtonStyle.Secondary),
 
-    const blocked = [
-        "unban",
-        "unmute",
-        "unwarn",
-        "unjail",
-        "unnote"
-    ];
-
-    if (!allowed.some(word => title.includes(word))) return;
-    if (blocked.some(word => title.includes(word))) return;
-
-    const embedData = embed.toJSON();
-
-    await message.delete().catch(() => {});
+        new ButtonBuilder()
+            .setCustomId('appeal')
+            .setLabel('📨 Appeal')
+            .setStyle(ButtonStyle.Success),
+    );
 
     await message.channel.send({
-        embeds: [embedData],
-        components: [{
-            type: 1,
-            components: [
-                {
-                    type: 2,
-                    style: 2,
-                    label: "🔄 Reload",
-                    custom_id: "reload"
-                },
-                {
-                    type: 2,
-                    style: 2,
-                    label: "📃 Punishment History",
-                    custom_id: "history"
-                },
-                {
-                    type: 2,
-                    style: 5,
-                    label: "📨 Appeal",
-                    url: "https://your-appeal-link.com"
-                }
-            ]
-        }]
+        content: "Test Buttons:",
+        components: [row]
     });
 });
 
-client.on("interactionCreate", async (interaction) => {
-
+client.on(Events.InteractionCreate, async interaction => {
     if (!interaction.isButton()) return;
 
-    if (interaction.customId === "reload" ||
-        interaction.customId === "history") {
-
-        await interaction.reply({
-            content: "This is only for moderators.",
-            ephemeral: true
-        });
-    }
+    await interaction.reply({
+        content: `You clicked ${interaction.customId}`,
+        ephemeral: true
+    });
 });
 
 client.login(process.env.TOKEN);
