@@ -5,83 +5,97 @@ const {
     ButtonBuilder,
     ButtonStyle,
     EmbedBuilder,
-    Events
+    Events,
+    REST,
+    Routes,
+    SlashCommandBuilder
 } = require('discord.js');
 
+const TOKEN = process.env.TOKEN;
+const CLIENT_ID = process.env.CLIENT_ID;
+const GUILD_ID = process.env.GUILD_ID;
+
 const client = new Client({
-    intents: [
-        GatewayIntentBits.Guilds
-    ]
+    intents: [GatewayIntentBits.Guilds]
 });
 
 client.once(Events.ClientReady, () => {
     console.log(`Logged in as ${client.user.tag}`);
 });
 
-/*
-COMMAND:
-Type !buttons in any channel
-Bot will send embed with buttons
-*/
-
 client.on(Events.InteractionCreate, async interaction => {
-    if (!interaction.isButton()) return;
 
-    if (interaction.customId === 'reload') {
-        await interaction.reply({
-            content: "🔄 Reload requested.",
-            ephemeral: true
-        });
+    // Slash Command
+    if (interaction.isChatInputCommand()) {
+        if (interaction.commandName === 'buttons') {
+
+            const embed = new EmbedBuilder()
+                .setTitle("Ban System")
+                .setDescription("Choose an option below:")
+                .setColor(0xff0000);
+
+            const row = new ActionRowBuilder().addComponents(
+                new ButtonBuilder()
+                    .setCustomId('reload')
+                    .setLabel('🔄 Reload')
+                    .setStyle(ButtonStyle.Primary),
+
+                new ButtonBuilder()
+                    .setCustomId('history')
+                    .setLabel('📃 Punishment History')
+                    .setStyle(ButtonStyle.Secondary),
+
+                new ButtonBuilder()
+                    .setCustomId('appeal')
+                    .setLabel('📨 Appeal')
+                    .setStyle(ButtonStyle.Success),
+            );
+
+            await interaction.reply({
+                embeds: [embed],
+                components: [row]
+            });
+        }
     }
 
-    if (interaction.customId === 'history') {
-        await interaction.reply({
-            content: "📃 Punishment history requested.",
-            ephemeral: true
-        });
-    }
+    // Button Interaction
+    if (interaction.isButton()) {
 
-    if (interaction.customId === 'appeal') {
-        await interaction.reply({
-            content: "📨 Appeal link: https://your-appeal-link.com",
-            ephemeral: true
-        });
+        if (interaction.customId === 'reload') {
+            await interaction.reply({ content: "🔄 Reload requested.", ephemeral: true });
+        }
+
+        if (interaction.customId === 'history') {
+            await interaction.reply({ content: "📃 Punishment history requested.", ephemeral: true });
+        }
+
+        if (interaction.customId === 'appeal') {
+            await interaction.reply({ content: "📨 Appeal link: https://your-appeal-link.com", ephemeral: true });
+        }
     }
 });
 
-client.on('messageCreate', async (message) => {
-    if (message.author.bot) return;
+client.login(TOKEN);
 
-    if (message.content === '!buttons') {
+// Register Slash Command
+const commands = [
+    new SlashCommandBuilder()
+        .setName('buttons')
+        .setDescription('Show ban buttons')
+        .toJSON()
+];
 
-        const embed = new EmbedBuilder()
-            .setTitle("Ban System")
-            .setDescription("Choose an option below:")
-            .setColor(0xff0000);
+const rest = new REST({ version: '10' }).setToken(TOKEN);
 
-        const row = new ActionRowBuilder().addComponents(
-            new ButtonBuilder()
-                .setCustomId('reload')
-                .setLabel('🔄 Reload')
-                .setStyle(ButtonStyle.Primary),
-
-            new ButtonBuilder()
-                .setCustomId('history')
-                .setLabel('📃 Punishment History')
-                .setStyle(ButtonStyle.Secondary),
-
-            new ButtonBuilder()
-                .setCustomId('appeal')
-                .setLabel('📨 Appeal')
-                .setStyle(ButtonStyle.Success),
+(async () => {
+    try {
+        await rest.put(
+            Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID),
+            { body: commands }
         );
-
-        await message.channel.send({
-            embeds: [embed],
-            components: [row]
-        });
+        console.log('Slash command registered');
+    } catch (error) {
+        console.error(error);
     }
-});
-
-client.login(process.env.TOKEN);
+})();
 
